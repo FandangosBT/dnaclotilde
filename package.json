@@ -13,7 +13,7 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint:styles": "stylelint \"frontend/src/**/*.css\"",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "test": "npm run test -w backend && npm run test -w frontend",
     "audit": "npm audit --audit-level=moderate",
     "audit:fix": "npm audit fix"
