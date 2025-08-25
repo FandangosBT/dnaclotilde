@@ -1,0 +1,52 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:3001} vite --port 5174",
+    "build": "VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:3001} vite build",
+    "preview": "VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:3001} vite preview --port ${PORT:-5174}",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:open": "playwright test --ui",
+    "e2e:install": "playwright install",
+    "format": "prettier src --write",
+    "format:check": "prettier src --check",
+    "perf:lh": "mkdir -p .lighthouse && start-server-and-test 'npm run preview' http://localhost:5174 \"lighthouse http://localhost:5174 --preset=desktop --output=json --output=html --output-path=.lighthouse/report\"",
+    "perf:lh:attach": "mkdir -p .lighthouse && lighthouse http://localhost:${PORT:-5176} --preset=desktop --output=json --output=html --output-path=.lighthouse/report"
+  },
+  "dependencies": {
+    "dompurify": "^3.0.9",
+    "gsap": "^3.13.0",
+    "lucide-react": "^0.541.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@testing-library/jest-dom": "^6.7.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/dompurify": "^3.0.5",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/ui": "^3.2.4",
+    "autoprefixer": "^10.4.21",
+    "clsx": "^2.1.1",
+    "jsdom": "^26.1.0",
+    "lighthouse": "^12.0.0",
+    "postcss": "^8.5.6",
+    "start-server-and-test": "^2.0.3",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.12",
+    "typescript": "^5.9.2",
+    "vite": "^5.4.0",
+    "vitest": "^3.2.4"
+  }
+}

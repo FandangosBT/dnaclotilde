@@ -1,0 +1,73 @@
+{
+  "root": true,
+  "env": {
+    "es2022": true,
+    "node": true
+  },
+  "extends": ["eslint:recommended"],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-console": "warn",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "prefer-const": "warn",
+    "no-var": "error",
+    "no-constant-condition": "warn",
+    "no-empty": ["error", { "allowEmptyCatch": true }]
+  },
+  "overrides": [
+    {
+      "files": ["frontend/**/*.{ts,tsx}"],
+      "parser": "@typescript-eslint/parser",
+      "plugins": ["@typescript-eslint", "react-hooks", "security", "tailwindcss", "react"],
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:react/recommended",
+        "plugin:react-hooks/recommended"
+      ],
+      "env": {
+        "browser": true,
+        "es2022": true
+      },
+      "settings": {
+        "react": {
+          "version": "detect"
+        }
+      },
+      "rules": {
+        "react/react-in-jsx-scope": "off",
+        "react/prop-types": "off",
+        "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/ban-ts-comment": ["warn", { "ts-ignore": "allow-with-description" }],
+        "no-unused-vars": "off",
+        "no-constant-condition": "warn",
+        "security/detect-object-injection": "warn",
+        "security/detect-non-literal-fs-filename": "warn",
+        "security/detect-unsafe-regex": "warn",
+        "tailwindcss/classnames-order": "warn",
+        "react/jsx-no-target-blank": ["error", { "allowReferrer": false }]
+      }
+    },
+    {
+      "files": ["backend/**/*.js", "backend/**/*.cjs"],
+      "plugins": ["security"],
+      "extends": ["eslint:recommended"],
+      "env": {
+        "node": true,
+        "es2022": true
+      },
+      "rules": {
+        "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+        "no-constant-condition": "warn",
+        "no-inner-declarations": "warn",
+        "security/detect-object-injection": "warn",
+        "security/detect-non-literal-fs-filename": "warn",
+        "security/detect-unsafe-regex": "warn"
+      }
+    }
+  ]
+}

@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens básicos para tema escuro */
+:root {
+  color-scheme: dark;
+  --font-coder:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  --font-area:
+    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    'Liberation Sans', sans-serif;
+
+  /* Cores base */
+  --color-bg-root: #0b0f14; /* fundo geral do app */
+  --color-bg-1: #1a1a1a; /* superfícies/cards principais */
+  --color-bg-2: #141414; /* hover/nível 2 */
+  --color-bg-3: #101010; /* contraste mais forte (bolha do usuário) */
+  --color-border: #2a2a2a; /* bordas sutis */
+  --color-danger: #ff4c4c;
+  --color-danger-bg: #3a0b0b;
+  --color-text-primary: #e6edf3;
+  --color-text-secondary: #bbbbbb;
+  --color-text-muted: #888888;
+  --color-text-subtle: #777777;
+
+  --color-accent-gold: #ede09f;
+  --color-accent-gold-hover: #f2e8a0;
+
+  /* RGB helpers para opacidade controlada */
+  --color-text-secondary-rgb: 187, 187, 187; /* #bbbbbb */
+  --color-accent-gold-rgb: 237, 224, 159; /* #ede09f */
+  /* Motion tokens */
+  --motion-duration-fast: 200ms;
+  --motion-duration-normal: 300ms;
+  --motion-duration-slow: 500ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-emphasized: cubic-bezier(0.32, 0, 0, 1);
+}
+
+/* Removido @font-face local, usando Google Fonts com display=swap via index.html */
+
+html {
+  font-family: var(--font-area);
+}
+
+/***** Utilitários e base *****/
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-coder);
+  }
+  button {
+    font-family: var(--font-coder);
+  }
+  /* Evitar @apply com utilitário custom; aplicar direto */
+  body {
+    background-color: var(--color-bg-root);
+    color: var(--color-text-primary);
+  }
+}
+
+@layer utilities {
+  /* Backgrounds */
+  .bg-root {
+    background-color: var(--color-bg-root);
+  }
+  .bg-surface-1 {
+    background-color: var(--color-bg-1);
+  }
+  .bg-surface-2 {
+    background-color: var(--color-bg-2);
+  }
+  .bg-surface-3 {
+    background-color: var(--color-bg-3);
+  }
+  .bg-border-color {
+    background-color: var(--color-border);
+  }
+
+  /* Hover helpers */
+  .hover\:bg-surface-2:hover {
+    background-color: var(--color-bg-2);
+  }
+  .hover\:bg-surface-1:hover {
+    background-color: var(--color-bg-1);
+  }
+
+  /* Borders */
+  .border-border {
+    border-color: var(--color-border);
+  }
+  .border-gold {
+    border-color: var(--color-accent-gold);
+  }
+
+  /* Text */
+  .text-primary {
+    color: var(--color-text-primary);
+  }
+  .text-secondary {
+    color: var(--color-text-secondary);
+  }
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+  .text-subtle {
+    color: var(--color-text-subtle);
+  }
+  .text-gold {
+    color: var(--color-accent-gold);
+  }
+
+  /* Placeholder */
+  .placeholder-muted::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  /* Accents */
+  .bg-gold {
+    background-color: var(--color-accent-gold);
+  }
+  .hover\:bg-gold-hover:hover {
+    background-color: var(--color-accent-gold-hover);
+  }
+  .bg-gold-80 {
+    background-color: rgba(var(--color-accent-gold-rgb), 0.8);
+  }
+  .bg-gold-60 {
+    background-color: rgba(var(--color-accent-gold-rgb), 0.6);
+  }
+  .bg-gold-40 {
+    background-color: rgba(var(--color-accent-gold-rgb), 0.4);
+  }
+
+  /* Ring (Tailwind compat) */
+  .ring-gold {
+    --tw-ring-color: var(--color-accent-gold);
+  }
+
+  /* Opacity mixes via RGB helpers */
+  .bg-secondary-50 {
+    background-color: rgba(var(--color-text-secondary-rgb), 0.5);
+  }
+  .text-danger {
+    color: var(--color-danger);
+  }
+  .bg-danger {
+    background-color: var(--color-danger-bg);
+  }
+  .border-danger {
+    border-color: var(--color-danger);
+  }
+  /* Focus ring acessível (gold) */
+  .focus-visible-ring:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--color-accent-gold-rgb), 0.45);
+  }
+
+  /* Estado interativo padrão */
+  .interactive {
+    transition:
+      transform var(--motion-duration-normal) var(--motion-ease-standard),
+      color var(--motion-duration-fast) var(--motion-ease-standard),
+      background-color var(--motion-duration-fast) var(--motion-ease-standard),
+      border-color var(--motion-duration-fast) var(--motion-ease-standard);
+    will-change: transform;
+  }
+  .interactive:hover {
+    transform: translateY(-1px);
+  }
+  .interactive:active {
+    transform: translateY(0);
+    opacity: 0.98;
+  }
+
+  /* Curvas padrão */
+  .transition-standard {
+    transition-timing-function: var(--motion-ease-standard);
+  }
+  .transition-emphasized {
+    transition-timing-function: var(--motion-ease-emphasized);
+  }
+
+  /* Emoji-safe font stack */
+  .emoji-safe {
+    font-family: var(--font-area), 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', 'EmojiOne Color', 'Segoe UI Symbol', emoji;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive {
+    transition: none !important;
+    transform: none !important;
+  }
+}
