@@ -11,11 +11,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
+      - name: Validate PR title (Conventional Commits)
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "$PR_TITLE" | npx --yes @commitlint/cli@19.3.0 --config commitlint.config.cjs
       - name: Install dependencies
         run: npm ci
       - name: Prettier Check

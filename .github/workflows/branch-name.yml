@@ -1,0 +1,22 @@
+name: Branch name check
+
+on:
+  pull_request:
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch naming convention
+        shell: bash
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          echo "Branch: $BRANCH"
+          if [[ ! "$BRANCH" =~ ^(feat|fix|chore|docs|ci|test|refactor|perf|revert)\/[a-z0-9._-]+$ ]]; then
+            echo "✗ Branch name '$BRANCH' inválido. Use: <type>/<name>"
+            echo "Tipos permitidos: feat|fix|chore|docs|ci|test|refactor|perf|revert"
+            echo "Exemplos: feat/analyze-endpoint, fix/transcription-timeout"
+            exit 1
+          fi
+          echo "✓ Branch name válido"

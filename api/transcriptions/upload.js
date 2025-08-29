@@ -1,5 +1,8 @@
 export const config = { runtime: 'nodejs' }
 
+import { applyRateLimit } from '../_utils/rateLimit.js'
+import { logError, logInfo, startTimer, getRequestId } from '../_utils/logger.js'
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.status(204).end()
@@ -11,6 +14,9 @@ export default async function handler(req, res) {
     return
   }
 
+  const timer = startTimer({ route: '/api/transcriptions/upload' })
+  const reqId = getRequestId(req)
+
   const apiKey = process.env.ASSEMBLYAI_API_KEY || ''
   const baseUrl = process.env.ASSEMBLYAI_BASE_URL || 'https://api.assemblyai.com/v2'
 
@@ -18,6 +24,8 @@ export default async function handler(req, res) {
     res.status(500).json({ code: 'MISSING_API_KEY', message: 'ASSEMBLYAI_API_KEY não configurada' })
     return
   }
+
+  if (!applyRateLimit(req, res, 'general')) return
 
   try {
     // Lê o corpo binário (arquivo de áudio)
@@ -42,6 +50,7 @@ export default async function handler(req, res) {
 
     if (!uploadRes.ok) {
       const text = await uploadRes.text().catch(() => '')
+      logError('assemblyai upload upstream error', { status: uploadRes.status, details: text, reqId })
       res.status(502).json({ code: 'UPSTREAM_ERROR', message: 'Falha no upload do áudio', details: text })
       return
     }
@@ -69,6 +78,7 @@ export default async function handler(req, res) {
 
     if (!createRes.ok) {
       const text = await createRes.text().catch(() => '')
+      logError('assemblyai create transcript upstream error', { status: createRes.status, details: text, reqId })
       res.status(502).json({ code: 'UPSTREAM_ERROR', message: 'Falha ao criar transcrição', details: text })
       return
     }
@@ -79,9 +89,10 @@ export default async function handler(req, res) {
       return
     }
 
+    logInfo('transcription uploaded+created', { id: data.id, reqId, ...timer.end() })
     res.status(202).json({ id: data.id, status: data.status })
   } catch (err) {
-    console.error(err)
+    logError('transcriptions upload error', { err: String(err), stack: err?.stack, reqId, ...timer.end() })
     res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Erro ao processar upload de transcrição' })
   }
 }

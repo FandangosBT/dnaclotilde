@@ -2,6 +2,9 @@ export const config = {
   runtime: 'nodejs',
 }
 
+import { applyRateLimit } from '../_utils/rateLimit.js'
+import { logError, logInfo, startTimer, getRequestId } from '../_utils/logger.js'
+
 const openaiConfig = {
   apiKey: process.env.OPENAI_API_KEY || '',
   baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
@@ -93,9 +96,24 @@ async function streamChat({ message, mode, tone, formality }, { signal } = {}) {
 }
 
 export default async function handler(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.status(204).end()
+    return
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' })
   }
+
+  if (!openaiConfig.apiKey) {
+    return res
+      .status(500)
+      .json({ code: 'MISSING_API_KEY', message: 'OPENAI_API_KEY não configurada' })
+  }
+
+  if (!applyRateLimit(req, res, 'chat')) return
+
+  const reqId = getRequestId(req)
+  const timer = startTimer({ route: '/api/chat/stream' })
 
   const {
     message,
@@ -107,12 +125,6 @@ export default async function handler(req, res) {
 
   if (!message || typeof message !== 'string') {
     return res.status(400).json({ code: 'BAD_REQUEST', message: 'Message is required' })
-  }
-
-  if (!openaiConfig.apiKey) {
-    return res
-      .status(500)
-      .json({ code: 'MISSING_API_KEY', message: 'OPENAI_API_KEY não configurada' })
   }
 
   // Controle de cancelamento e timeout
@@ -141,6 +153,12 @@ export default async function handler(req, res) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST',
     'Access-Control-Allow-Headers': 'Content-Type',
+  })
+
+  logInfo('chat stream start', {
+    reqId,
+    params: { mode, tone, formality, objective },
+    messageLen: message.length,
   })
 
   const heartbeat = setInterval(() => {
@@ -193,16 +211,19 @@ export default async function handler(req, res) {
         res.write(`data: ${JSON.stringify({ suggestions })}\n\n`)
       }
     }
+
+    logInfo('chat stream success', { hadChunks, reqId, ...timer.end() })
   } catch (err) {
     const code = timedOut ? 'TIMEOUT' : abortedByClient ? 'ABORTED' : 'LLM_ERROR'
-    const message =
+    const messageOut =
       code === 'TIMEOUT'
         ? 'Tempo esgotado'
         : code === 'ABORTED'
           ? 'Cancelado'
           : 'Erro no provedor LLM'
     res.write(`event: error\n`)
-    res.write(`data: ${JSON.stringify({ code, message })}\n\n`)
+    res.write(`data: ${JSON.stringify({ code, message: messageOut })}\n\n`)
+    logError('chat stream error', { code, err: String(err), stack: err?.stack, reqId, ...timer.end() })
   } finally {
     clearInterval(heartbeat)
     clearTimeout(timeoutId)

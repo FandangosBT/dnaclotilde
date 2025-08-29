@@ -14,7 +14,14 @@ import { uploadAndPollTranscription } from '../utils/transcription'
 import SuggestionsChips from './components/SuggestionsChips'
 import InteractiveHoverButton from './components/InteractiveHoverButton'
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || '' // em prod (Vercel) fica vazio e usa /api
+// Ajuste robusto da base da API:
+// - Em produção: ignora VITE_BACKEND_URL quando for localhost/127.0.0.1 ou vazia e usa "/api" (mesmo domínio/Vercel Functions)
+// - Em desenvolvimento: usa VITE_BACKEND_URL (ou fallback http://localhost:3001)
+const isProd = import.meta.env.PROD
+const fromEnv = (import.meta.env.VITE_BACKEND_URL || '').trim()
+const API_BASE = isProd
+  ? (fromEnv && !/^(https?:\/\/)?(localhost|127\.0\.0\.1)/.test(fromEnv) ? fromEnv : '')
+  : (fromEnv || 'http://localhost:3001')
 const apiUrl = (path: string) => `${API_BASE}${API_BASE ? '' : '/api'}${path}`
 
 // Config de transcrição via env (com defaults e sanitização)

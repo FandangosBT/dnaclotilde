@@ -1,5 +1,8 @@
 export const config = { runtime: 'nodejs' }
 
+import { applyRateLimit } from '../_utils/rateLimit.js'
+import { logError, logInfo, startTimer, getRequestId } from '../_utils/logger.js'
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.status(204).end()
@@ -11,6 +14,9 @@ export default async function handler(req, res) {
     return
   }
 
+  const timer = startTimer({ route: '/api/transcriptions' })
+  const reqId = getRequestId(req)
+
   const apiKey = process.env.ASSEMBLYAI_API_KEY || ''
   const baseUrl = process.env.ASSEMBLYAI_BASE_URL || 'https://api.assemblyai.com/v2'
 
@@ -18,6 +24,8 @@ export default async function handler(req, res) {
     res.status(500).json({ code: 'MISSING_API_KEY', message: 'ASSEMBLYAI_API_KEY não configurada' })
     return
   }
+
+  if (!applyRateLimit(req, res, 'general')) return
 
   try {
     const body = req.body || {}
@@ -42,14 +50,16 @@ export default async function handler(req, res) {
 
     if (!r.ok) {
       const text = await r.text().catch(() => '')
+      logError('assemblyai create transcript upstream error', { status: r.status, details: text, reqId })
       res.status(502).json({ code: 'UPSTREAM_ERROR', message: 'Falha ao criar transcrição', details: text })
       return
     }
 
     const data = await r.json()
+    logInfo('transcription created', { id: data.id, reqId, ...timer.end() })
     res.status(202).json({ id: data.id, status: data.status })
   } catch (err) {
-    console.error(err)
+    logError('transcriptions create error', { err: String(err), stack: err?.stack, reqId, ...timer.end() })
     res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Erro ao criar transcrição' })
   }
 }
