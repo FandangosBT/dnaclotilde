@@ -297,10 +297,3 @@ export default function ChatCommercialWidget() {
     </div>
   )
 }
-
-;-(
-  <p className="text-secondary text-sm">
-    Especialista em potencializar resultados de PMEs com soluções SaaS sob medida – direto ao ponto
-    e com olhar consultivo
-  </p>
-)
