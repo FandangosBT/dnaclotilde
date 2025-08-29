@@ -1,5 +1,1 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-# Lint e format apenas nos arquivos staged
 npx --no-install lint-staged
