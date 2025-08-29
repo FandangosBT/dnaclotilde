@@ -56,7 +56,7 @@ export default function SuggestionsChips({
 
   return (
     <div
-      className="mt-3 flex gap-2 overflow-x-auto flex-nowrap snap-x snap-proximity"
+      className="mt-3 flex snap-x snap-proximity flex-nowrap gap-2 overflow-x-auto"
       role="list"
       aria-label="Sugestões de próximo passo"
       onKeyDown={onKeyDown}
@@ -78,12 +78,16 @@ export default function SuggestionsChips({
           }}
           className={`ring-gold shrink-0 snap-start rounded-full border px-3 py-1.5 text-xs transition-colors will-change-transform focus:outline-none focus-visible:ring-2 disabled:opacity-60 ${
             activeIndex === idx
-              ? 'bg-gold text-black border-transparent'
-              : 'bg-border-color text-gold border-transparent hover:border-gold'
+              ? 'bg-gold border-transparent text-black'
+              : 'bg-border-color text-gold hover:border-gold border-transparent'
           }`}
-          onMouseEnter={(e) => !(e.currentTarget as HTMLButtonElement).disabled && hoverIn(e.currentTarget)}
+          onMouseEnter={(e) =>
+            !(e.currentTarget as HTMLButtonElement).disabled && hoverIn(e.currentTarget)
+          }
           onMouseLeave={(e) => hoverOut(e.currentTarget)}
-          onMouseDown={(e) => !(e.currentTarget as HTMLButtonElement).disabled && pressIn(e.currentTarget)}
+          onMouseDown={(e) =>
+            !(e.currentTarget as HTMLButtonElement).disabled && pressIn(e.currentTarget)
+          }
           onMouseUp={(e) => pressOut(e.currentTarget)}
           title="Inserir sugestão no input"
           aria-label={`Inserir sugestão: ${sugg}`}

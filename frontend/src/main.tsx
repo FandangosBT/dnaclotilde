@@ -5,10 +5,10 @@ import './index.css'
 import ChatCommercialWidget from './ui/components/ChatCommercialWidget'
 
 const rootEl = document.getElementById('root')!
-const useWidget = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('widget') === 'commercial'
+const useWidget =
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('widget') === 'commercial'
 
 createRoot(rootEl).render(
-  <React.StrictMode>
-    {useWidget ? <ChatCommercialWidget /> : <App />}
-  </React.StrictMode>,
+  <React.StrictMode>{useWidget ? <ChatCommercialWidget /> : <App />}</React.StrictMode>,
 )

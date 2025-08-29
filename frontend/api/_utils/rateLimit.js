@@ -9,7 +9,9 @@ export function getIp(req) {
   const xf = req.headers?.['x-forwarded-for']
   if (typeof xf === 'string' && xf.length > 0) return xf.split(',')[0].trim()
   return (
-    req.socket?.remoteAddress || req.connection?.remoteAddress || req.headers?.['x-real-ip'] ||
+    req.socket?.remoteAddress ||
+    req.connection?.remoteAddress ||
+    req.headers?.['x-real-ip'] ||
     'unknown'
   )
 }
@@ -46,7 +48,10 @@ export function applyRateLimit(req, res, kind = 'general') {
       try {
         res.setHeader('Retry-After', String(Math.ceil(resetIn / 1000)))
       } catch (_) {}
-      res.status(429).json({ code: 'RATE_LIMITED', message: 'Muitas requisições, tente novamente em instantes.' })
+      res.status(429).json({
+        code: 'RATE_LIMITED',
+        message: 'Muitas requisições, tente novamente em instantes.',
+      })
       return false
     }
 

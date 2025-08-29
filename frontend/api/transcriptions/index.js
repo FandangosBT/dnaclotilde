@@ -31,7 +31,9 @@ export default async function handler(req, res) {
     const body = req.body || {}
     const audio_url = body.audio_url || body.audioUrl || body.url
     if (!audio_url || typeof audio_url !== 'string') {
-      res.status(400).json({ code: 'BAD_REQUEST', message: 'Informe audio_url (URL pública do áudio)' })
+      res
+        .status(400)
+        .json({ code: 'BAD_REQUEST', message: 'Informe audio_url (URL pública do áudio)' })
       return
     }
 
@@ -50,8 +52,14 @@ export default async function handler(req, res) {
 
     if (!r.ok) {
       const text = await r.text().catch(() => '')
-      logError('assemblyai create transcript upstream error', { status: r.status, details: text, reqId })
-      res.status(502).json({ code: 'UPSTREAM_ERROR', message: 'Falha ao criar transcrição', details: text })
+      logError('assemblyai create transcript upstream error', {
+        status: r.status,
+        details: text,
+        reqId,
+      })
+      res
+        .status(502)
+        .json({ code: 'UPSTREAM_ERROR', message: 'Falha ao criar transcrição', details: text })
       return
     }
 
@@ -59,7 +67,12 @@ export default async function handler(req, res) {
     logInfo('transcription created', { id: data.id, reqId, ...timer.end() })
     res.status(202).json({ id: data.id, status: data.status })
   } catch (err) {
-    logError('transcriptions create error', { err: String(err), stack: err?.stack, reqId, ...timer.end() })
+    logError('transcriptions create error', {
+      err: String(err),
+      stack: err?.stack,
+      reqId,
+      ...timer.end(),
+    })
     res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Erro ao criar transcrição' })
   }
 }

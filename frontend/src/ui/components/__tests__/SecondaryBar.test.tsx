@@ -20,7 +20,9 @@ describe('SecondaryBar', () => {
     setup({ streaming: true })
     expect(screen.getByRole('button', { name: /abrir templates/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /exportar sessão/i })).toBeInTheDocument()
-    const transcribe = screen.getByRole('button', { name: /transcrever áudio por url/i }) as HTMLButtonElement
+    const transcribe = screen.getByRole('button', {
+      name: /transcrever áudio por url/i,
+    }) as HTMLButtonElement
     expect(transcribe).toBeDisabled()
     const clear = screen.getByRole('button', { name: /limpar conversa/i }) as HTMLButtonElement
     expect(clear).toBeDisabled()

@@ -76,9 +76,12 @@ export default async function handler(req, res) {
       `Transcript (trechos relevantes, pode ter sido truncado=${Boolean(transcriptTruncated)}):\n` +
         safeSlice(transcriptResolved, 0, 12000),
       webSnippets.length > 0
-        ? `Resultados de pesquisa na Web (máx ${topK}):\n` + webSnippets.map((w, i) => `W${i + 1}. ${w.title}\nURL: ${w.url}\nTrecho: ${w.snippet}`).join('\n\n')
+        ? `Resultados de pesquisa na Web (máx ${topK}):\n` +
+          webSnippets
+            .map((w, i) => `W${i + 1}. ${w.title}\nURL: ${w.url}\nTrecho: ${w.snippet}`)
+            .join('\n\n')
         : 'Sem resultados de Web ou não habilitado.',
-      'Instruções: siga a estrutura e gere citações no final. Use marcadores [T#] para transcript e [W#] para Web.'
+      'Instruções: siga a estrutura e gere citações no final. Use marcadores [T#] para transcript e [W#] para Web.',
     ].join('\n\n')
 
     const openai = {
@@ -97,7 +100,10 @@ export default async function handler(req, res) {
     ]
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), Number(process.env.CHAT_STREAM_TIMEOUT_MS ?? 90000))
+    const timeout = setTimeout(
+      () => controller.abort(),
+      Number(process.env.CHAT_STREAM_TIMEOUT_MS ?? 90000),
+    )
 
     let aiText = ''
     try {
@@ -133,11 +139,21 @@ export default async function handler(req, res) {
     const transcriptCitations = buildTranscriptCitationsFromChunks(transcriptChunks)
     const citations = {
       transcript: transcriptCitations,
-      web: webSnippets.map((w, i) => ({ id: `W${i + 1}`, url: w.url, title: w.title, snippet: w.snippet })),
+      web: webSnippets.map((w, i) => ({
+        id: `W${i + 1}`,
+        url: w.url,
+        title: w.title,
+        snippet: w.snippet,
+      })),
       kb: [], // reservado: Assistants API com file_search
     }
 
-    logInfo('analyze success', { reqId, webUsed: enableWeb, webCount: webSnippets.length, ...timer.end() })
+    logInfo('analyze success', {
+      reqId,
+      webUsed: enableWeb,
+      webCount: webSnippets.length,
+      ...timer.end(),
+    })
     return ok(res, {
       answer: aiText,
       language,
@@ -263,7 +279,8 @@ async function tavilySearch(query, topK) {
 }
 
 function buildInstructions({ language, depth }) {
-  const depthHint = depth === 'deep' ? 'Faça uma análise profunda e crítica.' : 'Seja objetivo e direto.'
+  const depthHint =
+    depth === 'deep' ? 'Faça uma análise profunda e crítica.' : 'Seja objetivo e direto.'
   return [
     `Você é um analista sênior. Responda em ${language}. ${depthHint}`,
     'Estruture a resposta com as seções: 1) Resumo executivo; 2) Análise detalhada; 3) Evidências e Citações; 4) Riscos/Lacunas; 5) Próximos passos.',

@@ -223,7 +223,13 @@ export default async function handler(req, res) {
           : 'Erro no provedor LLM'
     res.write(`event: error\n`)
     res.write(`data: ${JSON.stringify({ code, message: messageOut })}\n\n`)
-    logError('chat stream error', { code, err: String(err), stack: err?.stack, reqId, ...timer.end() })
+    logError('chat stream error', {
+      code,
+      err: String(err),
+      stack: err?.stack,
+      reqId,
+      ...timer.end(),
+    })
   } finally {
     clearInterval(heartbeat)
     clearTimeout(timeoutId)

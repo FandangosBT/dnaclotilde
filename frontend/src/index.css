@@ -187,7 +187,9 @@ html {
 
   /* Emoji-safe font stack */
   .emoji-safe {
-    font-family: var(--font-area), 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', 'EmojiOne Color', 'Segoe UI Symbol', emoji;
+    font-family:
+      var(--font-area), 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji',
+      'Twemoji Mozilla', 'EmojiOne Color', 'Segoe UI Symbol', emoji;
   }
 }
 

@@ -28,7 +28,9 @@ test.describe('Responsividade', () => {
       const box = await send.boundingBox()
       expect(box).not.toBeNull()
       const within = await page.evaluate(({ x, y, width, height }) => {
-        return x >= 0 && y >= 0 && x + width <= window.innerWidth && y + height <= window.innerHeight
+        return (
+          x >= 0 && y >= 0 && x + width <= window.innerWidth && y + height <= window.innerHeight
+        )
       }, box!)
       expect(within).toBeTruthy()
 

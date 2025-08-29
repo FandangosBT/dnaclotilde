@@ -35,7 +35,7 @@ export default function Header({
 
   return (
     <header role="banner" className="border-border bg-surface-1 border-b px-4 py-5">
-      <div className="flex flex-col items-center gap-2 pt-3 pb-1">
+      <div className="flex flex-col items-center gap-2 pb-1 pt-3">
         <img
           src="/clotilde.jpg"
           alt="Dona Clotilde"
@@ -43,11 +43,14 @@ export default function Header({
           height={84}
           decoding="async"
           loading="eager"
-          className="h-[84px] w-[84px] rounded-full object-cover mx-auto"
+          className="mx-auto h-[84px] w-[84px] rounded-full object-cover"
         />
-        <h1 className="m-0 font-mono text-xl font-semibold text-white text-center">Dona Clotilde - Bruxa do 71</h1>
-        <h2 className="text-secondary font-sans text-[11px] sm:text-xs leading-snug mt-0.5 text-center">
-          Especialista em potencializar resultados de PMEs com soluções SaaS sob medida – direto ao ponto e com olhar consultivo
+        <h1 className="m-0 text-center font-mono text-xl font-semibold text-white">
+          Dona Clotilde - Bruxa do 71
+        </h1>
+        <h2 className="text-secondary mt-0.5 text-center font-sans text-[11px] leading-snug sm:text-xs">
+          Especialista em potencializar resultados de PMEs com soluções SaaS sob medida – direto ao
+          ponto e com olhar consultivo
         </h2>
       </div>
 

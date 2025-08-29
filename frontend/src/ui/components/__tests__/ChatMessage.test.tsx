@@ -79,7 +79,7 @@ describe('ChatMessage', () => {
   it('tem ações de copiar/feedback visíveis apenas em hover/focus via classes utilitárias', () => {
     const { container } = renderMsg({ role: 'assistant', content: 'Olá' })
     const actions = container.querySelector(
-      '.absolute.right-2.top-2.flex.items-center.gap-1'
+      '.absolute.right-2.top-2.flex.items-center.gap-1',
     ) as HTMLElement | null
     expect(actions).toBeTruthy()
     // Garante classes que escondem por padrão e mostram em hover/focus-within

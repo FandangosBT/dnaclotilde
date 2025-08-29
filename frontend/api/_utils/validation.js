@@ -27,7 +27,11 @@ export function validateAnalyzeBody({ query, transcriptText, transcriptUrl } = {
   const hasUrl = typeof transcriptUrl === 'string' && isSafeHttpUrl(transcriptUrl)
 
   if (!hasText && !hasUrl) {
-    return { ok: false, code: 'INVALID_BODY', message: 'Forneça transcriptText (string) ou transcriptUrl (http/https)' }
+    return {
+      ok: false,
+      code: 'INVALID_BODY',
+      message: 'Forneça transcriptText (string) ou transcriptUrl (http/https)',
+    }
   }
 
   return { ok: true }

@@ -8,12 +8,7 @@ describe('ChatMessage - defesa contra XSS', () => {
   const renderWith = (content: string) => {
     const message: Message = { role: 'assistant', content }
     const { container } = render(
-      <ChatMessage
-        message={message}
-        onCopy={() => {}}
-        isLast={false}
-        streaming={false}
-      />,
+      <ChatMessage message={message} onCopy={() => {}} isLast={false} streaming={false} />,
     )
     return container
   }
@@ -28,7 +23,8 @@ describe('ChatMessage - defesa contra XSS', () => {
   })
 
   it('não executa <script> nem cria SVG executável', () => {
-    const payload = '<svg onload="window.__xssExecuted=1"></svg><script>window.__xssExecuted=1</script>'
+    const payload =
+      '<svg onload="window.__xssExecuted=1"></svg><script>window.__xssExecuted=1</script>'
     const container = renderWith(payload)
     expect(container.querySelector('svg')).toBeNull()
     expect(container.querySelector('script')).toBeNull()

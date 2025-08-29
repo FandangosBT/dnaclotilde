@@ -50,8 +50,12 @@ describe('App integração (streaming + sugestões + cancelamento + exportação
 
     // sugestões renderizadas
     await waitFor(() => expect(screen.getByRole('list')).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Inserir sugestão: Próximo passo A' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Inserir sugestão: Próximo passo B' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Inserir sugestão: Próximo passo A' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Inserir sugestão: Próximo passo B' }),
+    ).toBeInTheDocument()
 
     // feedback (up)
     const like = screen.getByRole('button', { name: /^gostei$/i })

@@ -442,7 +442,9 @@ app.post('/transcriptions', rateLimit('general'), async (req, res) => {
     return res.status(400).json({ code: 'BAD_REQUEST', message: 'Payload inválido' })
   }
   if (!config.assembly.apiKey) {
-    return res.status(500).json({ code: 'MISSING_API_KEY', message: 'ASSEMBLYAI_API_KEY não configurada' })
+    return res
+      .status(500)
+      .json({ code: 'MISSING_API_KEY', message: 'ASSEMBLYAI_API_KEY não configurada' })
   }
   try {
     const r = await fetch(`${config.assembly.baseUrl}/transcript`, {
@@ -459,7 +461,9 @@ app.post('/transcriptions', rateLimit('general'), async (req, res) => {
     })
     if (!r.ok) {
       const text = await r.text().catch(() => '')
-      return res.status(502).json({ code: 'UPSTREAM_ERROR', message: 'Falha ao criar transcrição', details: text })
+      return res
+        .status(502)
+        .json({ code: 'UPSTREAM_ERROR', message: 'Falha ao criar transcrição', details: text })
     }
     const data = await r.json()
     return res.status(202).json({ id: data.id, status: data.status })
@@ -530,7 +534,9 @@ app.get('/transcriptions/:id', rateLimit('general'), async (req, res) => {
   const id = req.params.id
   if (!id) return res.status(400).json({ code: 'BAD_REQUEST', message: 'ID ausente' })
   if (!config.assembly.apiKey) {
-    return res.status(500).json({ code: 'MISSING_API_KEY', message: 'ASSEMBLYAI_API_KEY não configurada' })
+    return res
+      .status(500)
+      .json({ code: 'MISSING_API_KEY', message: 'ASSEMBLYAI_API_KEY não configurada' })
   }
   try {
     const r = await fetch(`${config.assembly.baseUrl}/transcript/${id}`, {
@@ -540,7 +546,9 @@ app.get('/transcriptions/:id', rateLimit('general'), async (req, res) => {
     })
     if (!r.ok) {
       const text = await r.text().catch(() => '')
-      return res.status(502).json({ code: 'UPSTREAM_ERROR', message: 'Falha ao obter transcrição', details: text })
+      return res
+        .status(502)
+        .json({ code: 'UPSTREAM_ERROR', message: 'Falha ao obter transcrição', details: text })
     }
     const data = await r.json()
     // Reduzir payload para a UI
@@ -555,6 +563,8 @@ app.get('/transcriptions/:id', rateLimit('general'), async (req, res) => {
     return res.json(out)
   } catch (err) {
     req.log?.error({ err }, 'transcriptions get error')
-    return res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Erro ao consultar transcrição' })
+    return res
+      .status(500)
+      .json({ code: 'INTERNAL_ERROR', message: 'Erro ao consultar transcrição' })
   }
 })

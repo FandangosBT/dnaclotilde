@@ -2,53 +2,67 @@ import { test, expect, type Page } from '@playwright/test'
 
 // Helper para injetar mock de fetch com SSE
 async function mockSSE(page: Page, mode: 'finish' | 'infinite') {
-  await page.addInitScript(({ mode }) => {
-    const origFetch = window.fetch
-    // @ts-ignore
-    window.fetch = (input: RequestInfo | URL, init?: any) => {
-      const url = typeof input === 'string' ? input : (input as URL).toString()
-      if (url.endsWith('/api/chat/stream') || url.endsWith('/chat/stream')) {
-        const stream = new ReadableStream<Uint8Array>({
-          start(controller) {
-            const encoder = new TextEncoder()
-            const signal: AbortSignal | undefined = init?.signal
-            if (signal) {
-              const onAbort = () => controller.error(new DOMException('Aborted', 'AbortError'))
-              if (signal.aborted) onAbort()
-              else signal.addEventListener('abort', onAbort)
-            }
-            if (mode === 'finish') {
-              controller.enqueue(encoder.encode('data: {"chunk":"Olá"}\n\n'))
-              setTimeout(() => controller.enqueue(encoder.encode('data: {"chunk":" mundo"}\n\n')), 40)
-              setTimeout(() => controller.enqueue(encoder.encode('data: {"suggestions":["Próximo A","Próximo B"]}\n\n')), 80)
-              setTimeout(() => controller.close(), 120)
-            } else {
-              // Mantém a conexão aberta com keep-alives
-              const id = setInterval(() => {
-                try {
-                  controller.enqueue(encoder.encode(': keep-alive\n\n'))
-                } catch {}
-              }, 200)
-              // Interrompe o keep-alive ao fechar
+  await page.addInitScript(
+    ({ mode }) => {
+      const origFetch = window.fetch
+      // @ts-ignore
+      window.fetch = (input: RequestInfo | URL, init?: any) => {
+        const url = typeof input === 'string' ? input : (input as URL).toString()
+        if (url.endsWith('/api/chat/stream') || url.endsWith('/chat/stream')) {
+          const stream = new ReadableStream<Uint8Array>({
+            start(controller) {
+              const encoder = new TextEncoder()
+              const signal: AbortSignal | undefined = init?.signal
+              if (signal) {
+                const onAbort = () => controller.error(new DOMException('Aborted', 'AbortError'))
+                if (signal.aborted) onAbort()
+                else signal.addEventListener('abort', onAbort)
+              }
+              if (mode === 'finish') {
+                controller.enqueue(encoder.encode('data: {"chunk":"Olá"}\n\n'))
+                setTimeout(
+                  () => controller.enqueue(encoder.encode('data: {"chunk":" mundo"}\n\n')),
+                  40,
+                )
+                setTimeout(
+                  () =>
+                    controller.enqueue(
+                      encoder.encode('data: {"suggestions":["Próximo A","Próximo B"]}\n\n'),
+                    ),
+                  80,
+                )
+                setTimeout(() => controller.close(), 120)
+              } else {
+                // Mantém a conexão aberta com keep-alives
+                const id = setInterval(() => {
+                  try {
+                    controller.enqueue(encoder.encode(': keep-alive\n\n'))
+                  } catch {}
+                }, 200)
+                // Interrompe o keep-alive ao fechar
+                // @ts-ignore
+                controller._keepAlive = id
+              }
+            },
+            cancel() {
               // @ts-ignore
-              controller._keepAlive = id
-            }
-          },
-          cancel() {
-            // @ts-ignore
-            if (this._keepAlive) clearInterval(this._keepAlive)
-          },
-        })
-        return Promise.resolve(
-          new Response(stream, { status: 200, headers: { 'Content-Type': 'text/event-stream' } }),
-        )
+              if (this._keepAlive) clearInterval(this._keepAlive)
+            },
+          })
+          return Promise.resolve(
+            new Response(stream, { status: 200, headers: { 'Content-Type': 'text/event-stream' } }),
+          )
+        }
+        if (url.includes('/api/feedback')) {
+          return Promise.resolve(
+            new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } }),
+          )
+        }
+        return origFetch(input as any, init)
       }
-      if (url.includes('/api/feedback')) {
-        return Promise.resolve(new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } }))
-      }
-      return origFetch(input as any, init)
-    }
-  }, { mode })
+    },
+    { mode },
+  )
 }
 
 test.describe('Streaming e fluxo ponta a ponta', () => {

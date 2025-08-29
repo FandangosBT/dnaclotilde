@@ -142,8 +142,8 @@ export default function ChatMessage({
         flushList()
         const isTitleLine =
           isAssistant && (/(\?)\s*$/.test(line) || (idx === 0 && line.length <= 80))
-        const pClass = `${!isAssistant ? 'text-right' : ''} ${isTitleLine ? 'font-semibold' : ''}`
-          .trim()
+        const pClass =
+          `${!isAssistant ? 'text-right' : ''} ${isTitleLine ? 'font-semibold' : ''}`.trim()
         els.push(
           <p key={`p-${idx}`} className={pClass || undefined}>
             {formatInline(line)}
@@ -191,17 +191,19 @@ export default function ChatMessage({
       <div className={bubbleWrapClass}>
         <div
           ref={containerRef}
-          className={`group relative border ${paddingClass} max-w-[90%] sm:max-w-[85%] md:max-w-[75%] rounded-2xl text-primary transition-colors will-change-transform focus-within:ring-2 ring-gold shadow-sm ${
+          className={`group relative border ${paddingClass} text-primary ring-gold max-w-[90%] rounded-2xl shadow-sm transition-colors will-change-transform focus-within:ring-2 sm:max-w-[85%] md:max-w-[75%] ${
             isAssistant
               ? 'bg-surface-1 border-border'
-              : `${userToneClass} mr-4 md:mr-6 min-w-[180px] pr-10`
+              : `${userToneClass} mr-4 min-w-[180px] pr-10 md:mr-6`
           } ${groupedWithPrev ? 'rounded-t-md' : ''}`}
           {...liveAttrs}
           data-testid="chat-message"
         >
           {!groupedWithPrev && (
             <div className="mb-1 flex items-center gap-2">
-              <div className={`text-secondary text-xs ${!isAssistant ? 'text-right w-full pr-8' : ''}`}>
+              <div
+                className={`text-secondary text-xs ${!isAssistant ? 'w-full pr-8 text-right' : ''}`}
+              >
                 {isAssistant ? 'Assistente' : 'Visitante'}
               </div>
               <div className={isAssistant ? 'flex-1' : 'hidden'} />
@@ -231,7 +233,7 @@ export default function ChatMessage({
           {message.timestamp && (
             <div
               ref={timestampRef}
-              className={`mt-2 text-[11px] leading-none text-secondary/70 ${!isAssistant ? 'text-right pr-1' : 'text-left'}`}
+              className={`text-secondary/70 mt-2 text-[11px] leading-none ${!isAssistant ? 'pr-1 text-right' : 'text-left'}`}
               aria-label={`Enviado às ${formatTime(message.timestamp)}`}
             >
               {formatTime(message.timestamp)}
@@ -239,7 +241,7 @@ export default function ChatMessage({
           )}
 
           {/* Ações no canto superior direito: copiar/feedback/regenerar (visíveis em hover/focus) */}
-          <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
             <button
               aria-label="Copiar conteúdo"
               title="Copiar"

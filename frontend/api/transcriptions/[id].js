@@ -40,8 +40,15 @@ export default async function handler(req, res) {
 
     if (!r.ok) {
       const text = await r.text().catch(() => '')
-      logError('assemblyai get transcript upstream error', { status: r.status, details: text, id, reqId })
-      res.status(502).json({ code: 'UPSTREAM_ERROR', message: 'Falha ao obter transcrição', details: text })
+      logError('assemblyai get transcript upstream error', {
+        status: r.status,
+        details: text,
+        id,
+        reqId,
+      })
+      res
+        .status(502)
+        .json({ code: 'UPSTREAM_ERROR', message: 'Falha ao obter transcrição', details: text })
       return
     }
 
@@ -57,7 +64,13 @@ export default async function handler(req, res) {
     logInfo('transcription fetched', { id, status: out.status, reqId, ...timer.end() })
     res.json(out)
   } catch (err) {
-    logError('transcriptions get error', { err: String(err), stack: err?.stack, id, reqId, ...timer.end() })
+    logError('transcriptions get error', {
+      err: String(err),
+      stack: err?.stack,
+      id,
+      reqId,
+      ...timer.end(),
+    })
     res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Erro ao consultar transcrição' })
   }
 }

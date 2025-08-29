@@ -31,6 +31,7 @@ export default {
       borderRadius: {
         card: '16px',
         pill: '9999px',
+        xl2: '1.25rem',
       },
       ringColor: {
         gold: 'var(--color-accent-gold)',
@@ -65,9 +66,6 @@ export default {
       },
       boxShadow: {
         soft: '0 6px 20px rgba(0,0,0,.25)',
-      },
-      borderRadius: {
-        xl2: '1.25rem',
       },
     },
   },

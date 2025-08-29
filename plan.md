@@ -1,9 +1,11 @@
 # DNA Clotilde — Plano de Desenvolvimento
 
 ## Visão Geral
+
 Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviado na requisição, (2) consulta a Base de Conhecimento (KB) global anexada ao Assistant da OpenAI (2 PDFs), e (3) opcionalmente consulta a Web. Responde em pt-BR, com análise profunda, estruturada e com citações (Transcript, KB e Web). Deploy em Vercel (serverless functions em api/).
 
 ## 1. Configuração do Projeto
+
 - [x] Configuração do ambiente de desenvolvimento
   - [x] Scripts npm para desenvolvimento e testes
   - [x] Rate limit básico para endpoints sensíveis (throttle)
@@ -17,15 +19,17 @@ Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviad
   - [x] Headers de segurança (CSP/CORS) em vercel.json
 
 ## 2. Base do Backend
+
 - [x] Serviços e utilitários principais
   - [x] Cliente OpenAI (Chat/Completions já usado em api/chat/stream.js)
   - [x] Serviço de Web Search (Tavily) com timeout e fallback (integrado no /api/analyze)
   - [x] Utilitários de chunking e citação (offsets/preview)
 - [ ] Estrutura base da API
-  - [x] Padrão de respostas (success/error + hints) via api/_utils/response.js
+  - [x] Padrão de respostas (success/error + hints) via api/\_utils/response.js
   - [ ] Middlewares de validação e limites (tamanho do transcript)
 
 ## 3. Backend Específico de Funcionalidades
+
 - [x] Endpoints da API para cada funcionalidade
   - POST /api/analyze (single-turn): query, transcript {type, data}, enableKB=true, enableWeb=false, options {language, depth, topK, temperature, maxTokens}
 - [ ] Implementação da lógica de negócios
@@ -42,6 +46,7 @@ Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviad
   - Tavily: TAVILY_API_KEY (opcional, somente quando enableWeb=true)
 
 ## 4. Base do Frontend
+
 - [ ] Configuração do framework de UI
   - [x] Vite + React já configurado; Tailwind presente
 - [ ] Biblioteca de componentes
@@ -54,6 +59,7 @@ Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviad
   - (Opcional) Campo de API Key para modo interno ou proteção simples
 
 ## 5. Frontend Específico de Funcionalidades
+
 - [ ] Componentes de UI para cada funcionalidade
   - Formulário: query, textarea transcript (ou URL), toggle enableWeb, opções avançadas
   - Viewer de resposta: seções (Resumo, Análise, Evidências, Riscos/Lacunas, Próximos passos)
@@ -65,6 +71,7 @@ Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviad
   - Exibir hints e detalhes quando houver fallbacks (ex.: sem Web)
 
 ## 6. Integração
+
 - [ ] Integração com API
   - Conectar frontend à rota /api/analyze com JSON
   - Mapear e exibir citações (Transcript/Kb/Web)
@@ -72,6 +79,7 @@ Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviad
   - Fluxo completo: preencher formulário → resposta estruturada com citações
 
 ## 7. Testes
+
 - [x] Testes unitários
   - Utilitários: chunking, normalização, composição de prompt
 - [x] Testes de integração
@@ -85,6 +93,7 @@ Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviad
   - [ ] Verificar ausência de segredos no cliente; validação de inputs e limites
 
 ## 8. Documentação
+
 - [ ] Documentação da API
   - Especificação do contrato /api/analyze e exemplos
 - [ ] Guias para usuários
@@ -95,6 +104,7 @@ Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviad
   - Diagrama de fluxo (Transcript + KB + Web), decisões e trade-offs
 
 ## 9. Implantação
+
 - [x] Configuração de pipeline CI/CD
   - CI rodando lint/test/build; gate de qualidade
 - [x] Ambiente de staging
@@ -108,6 +118,7 @@ Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviad
   - [x] Adicionar /api/analyze com maxDuration=60
 
 ## 10. Manutenção
+
 - [ ] Procedimentos para correção de bugs
   - Template de issues; rotas de rollback
 - [ ] Processos de atualização
@@ -118,6 +129,7 @@ Plataforma de análise single-turn que sempre: (1) lê e usa o transcript enviad
   - Revisões periódicas de latência e custo; otimizações de Top-K e timeouts
 
 ## Observações e Configuração de Ambientes
+
 - Variáveis (Vercel): OPENAI_API_KEY, OPENAI_ASSISTANT_ID (asst_MlVmE6Yq9xtZjXwPjqlxjCiX), TAVILY_API_KEY (opcional)
 - vercel.json: já possui maxDuration=60 para /api/chat/stream, /api/transcriptions/upload e /api/analyze; default 30s para demais functions
 - Segurança: rotacionar imediatamente a chave AssemblyAI que está em backend/.env e manter apenas no Vercel

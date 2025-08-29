@@ -22,9 +22,9 @@ describe('createAndPollTranscription', () => {
   })
 
   it('falha com URL inválida', async () => {
-    await expect(
-      createAndPollTranscription({ url: 'foo', apiUrl })
-    ).rejects.toThrowError('INVALID_URL')
+    await expect(createAndPollTranscription({ url: 'foo', apiUrl })).rejects.toThrowError(
+      'INVALID_URL',
+    )
   })
 
   it('cria e conclui transcrição com sucesso, chamando onStatus', async () => {
@@ -56,32 +56,32 @@ describe('createAndPollTranscription', () => {
 
   it('propaga erro de criação', async () => {
     fetchMock.mockResolvedValueOnce(notOk())
-    await expect(
-      createAndPollTranscription({ url: 'http://audio', apiUrl })
-    ).rejects.toThrowError('CREATE_FAILED')
+    await expect(createAndPollTranscription({ url: 'http://audio', apiUrl })).rejects.toThrowError(
+      'CREATE_FAILED',
+    )
   })
 
   it('propaga resposta inválida de criação', async () => {
     fetchMock.mockResolvedValueOnce(ok({}))
-    await expect(
-      createAndPollTranscription({ url: 'http://audio', apiUrl })
-    ).rejects.toThrowError('INVALID_CREATE_RESPONSE')
+    await expect(createAndPollTranscription({ url: 'http://audio', apiUrl })).rejects.toThrowError(
+      'INVALID_CREATE_RESPONSE',
+    )
   })
 
   it('propaga erro ao consultar (poll)', async () => {
     fetchMock.mockResolvedValueOnce(ok({ id: 'abc' }))
     fetchMock.mockResolvedValueOnce(notOk())
-    await expect(
-      createAndPollTranscription({ url: 'http://audio', apiUrl })
-    ).rejects.toThrowError('POLL_FAILED')
+    await expect(createAndPollTranscription({ url: 'http://audio', apiUrl })).rejects.toThrowError(
+      'POLL_FAILED',
+    )
   })
 
   it('propaga erro de transcrição quando status é error', async () => {
     fetchMock.mockResolvedValueOnce(ok({ id: 'abc' }))
     fetchMock.mockResolvedValueOnce(ok({ status: 'error', error: 'x' }))
-    await expect(
-      createAndPollTranscription({ url: 'http://audio', apiUrl })
-    ).rejects.toThrowError('TRANSCRIPTION_FAILED')
+    await expect(createAndPollTranscription({ url: 'http://audio', apiUrl })).rejects.toThrowError(
+      'TRANSCRIPTION_FAILED',
+    )
   })
 
   it('respeita timeout', async () => {

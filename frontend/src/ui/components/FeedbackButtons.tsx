@@ -75,7 +75,12 @@ export default function FeedbackButtons({ disabled, onFeedback }: FeedbackButton
       )}
 
       {showReason && (
-        <div id="feedback-reason-section" className="flex items-center gap-2" role="region" aria-label="Justificativa do feedback">
+        <div
+          id="feedback-reason-section"
+          className="flex items-center gap-2"
+          role="region"
+          aria-label="Justificativa do feedback"
+        >
           <input
             aria-label="Motivo do feedback"
             placeholder="O que posso melhorar?"

@@ -3,7 +3,9 @@ import { describe, it, expect } from 'vitest'
 import Header from '../Header'
 import type { Mode, Tone, Formality, Objective } from '../../../store/types'
 
-const setup = (overrides?: Partial<{ mode: Mode; tone: Tone; formality: Formality; objective: Objective }>) => ({
+const setup = (
+  overrides?: Partial<{ mode: Mode; tone: Tone; formality: Formality; objective: Objective }>,
+) => ({
   mode: (overrides?.mode ?? 'SDR') as Mode,
   tone: (overrides?.tone ?? 'breve') as Tone,
   formality: (overrides?.formality ?? 'informal') as Formality,
