@@ -4,7 +4,7 @@ import { ok, error } from '../_utils/response.js'
 import { validateAnalyzeBody, enforceTranscriptLimit, isSafeHttpUrl } from '../_utils/validation.js'
 
 export const config = {
-  runtime: 'nodejs18.x',
+  runtime: 'nodejs',
 }
 
 export default async function handler(req, res) {
