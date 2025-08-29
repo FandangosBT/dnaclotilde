@@ -173,23 +173,46 @@ export async function uploadAndPollTranscription(options: UploadAndPollOptions):
     throw new Error('INVALID_FILE')
   }
 
-  const createRes = await fetch(apiUrl('/transcriptions/upload'), {
-    method: 'POST',
-    headers: { 'Content-Type': (file as any).type || 'application/octet-stream' },
-    body: file,
-    signal,
-  })
-  if (!createRes.ok) {
-    throw new Error('CREATE_FAILED')
-  }
-  const createJson = await createRes.json().catch(() => null as any)
-  const id: string | undefined = createJson?.id
-  if (!id) {
-    throw new Error('INVALID_CREATE_RESPONSE')
+  // Limite preventivo no cliente (configurável via VITE_MAX_UPLOAD_MB, padrão 500MB)
+  const maxUploadMbRaw = Number((import.meta as any).env?.VITE_MAX_UPLOAD_MB)
+  const MAX_UPLOAD_MB = Number.isFinite(maxUploadMbRaw) ? maxUploadMbRaw : 500
+  const MAX_UPLOAD_BYTES = Math.floor(MAX_UPLOAD_MB * 1024 * 1024)
+  if ((file as any).size > MAX_UPLOAD_BYTES) {
+    throw new Error('FILE_TOO_LARGE')
   }
 
-  return pollTranscription({
-    id,
+  // Upload direto do cliente para Vercel Blob
+  // Import dinâmico para evitar carregar o SDK quando não utilizado
+  const { upload } = await import('@vercel/blob/client')
+
+  let blobUrl: string | null = null
+  try {
+    const result = await upload(
+      (file as any).name || 'audio',
+      file as any,
+      {
+        access: 'public',
+        handleUploadUrl: '/api/blob/upload',
+        contentType: (file as any).type || 'application/octet-stream',
+      } as any,
+    )
+    blobUrl = (result as any)?.url || null
+  } catch (e) {
+    // Normaliza erro de limite, caso o SDK reporte 413 do lado do provedor
+    const msg = String((e as any)?.message || e)
+    if (/413|payload too large|too large/i.test(msg)) {
+      throw new Error('FILE_TOO_LARGE')
+    }
+    throw e
+  }
+
+  if (!blobUrl) {
+    throw new Error('CREATE_FAILED')
+  }
+
+  // Reutiliza o fluxo já existente de criação+poll por URL
+  return createAndPollTranscription({
+    url: blobUrl,
     apiUrl,
     signal,
     onStatus,

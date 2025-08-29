@@ -20,22 +20,52 @@ import InteractiveHoverButton from './components/InteractiveHoverButton'
 const isProd = import.meta.env.PROD
 const fromEnv = (import.meta.env.VITE_BACKEND_URL || '').trim()
 const API_BASE = isProd
-  ? (fromEnv && !/^(https?:\/\/)?(localhost|127\.0\.0\.1)/.test(fromEnv) ? fromEnv : '')
-  : (fromEnv || 'http://localhost:3001')
+  ? fromEnv && !/^(https?:\/\/)?(localhost|127\.0\.0\.1)/.test(fromEnv)
+    ? fromEnv
+    : ''
+  : fromEnv || 'http://localhost:3001'
 const apiUrl = (path: string) => `${API_BASE}${API_BASE ? '' : '/api'}${path}`
 
 // Config de transcrição via env (com defaults e sanitização)
 const num = (v: unknown, fb: number, min?: number, max?: number) => {
   const n = Number(v)
   if (!Number.isFinite(n)) return fb
-  const clamped = (min != null && n < min) ? min : (max != null && n > max) ? max : n
+  const clamped = min != null && n < min ? min : max != null && n > max ? max : n
   return clamped
 }
-const TRANSCRIBE_TIMEOUT_MS = num(import.meta.env.VITE_TRANSCRIBE_TIMEOUT_MS, 120_000, 5_000, 10 * 60_000)
-const TRANSCRIBE_INITIAL_DELAY_MS = num(import.meta.env.VITE_TRANSCRIBE_INITIAL_DELAY_MS, 1_000, 100, 30_000)
-const TRANSCRIBE_MAX_DELAY_MS = num(import.meta.env.VITE_TRANSCRIBE_MAX_DELAY_MS, 5_000, 500, 60_000)
+const TRANSCRIBE_TIMEOUT_MS = num(
+  import.meta.env.VITE_TRANSCRIBE_TIMEOUT_MS,
+  120_000,
+  5_000,
+  10 * 60_000,
+)
+const TRANSCRIBE_INITIAL_DELAY_MS = num(
+  import.meta.env.VITE_TRANSCRIBE_INITIAL_DELAY_MS,
+  1_000,
+  100,
+  30_000,
+)
+const TRANSCRIBE_MAX_DELAY_MS = num(
+  import.meta.env.VITE_TRANSCRIBE_MAX_DELAY_MS,
+  5_000,
+  500,
+  60_000,
+)
 const TRANSCRIBE_BACKOFF_FACTOR = num(import.meta.env.VITE_TRANSCRIBE_BACKOFF_FACTOR, 1.5, 1.1, 5)
 
+function mapUploadErrorMessage(e: unknown): string {
+  const msg = String((e as any)?.message || e || '')
+  if (/INVALID_FILE/i.test(msg)) return 'Arquivo inválido'
+  if (/FILE_TOO_LARGE/i.test(msg)) return 'O arquivo excede o limite permitido.'
+  if (/ENDPOINT_DEPRECATED/i.test(msg)) return 'Atualize o app e tente novamente.'
+  if (/INVALID_URL/i.test(msg)) return 'URL inválida'
+  if (/CREATE_FAILED/i.test(msg)) return 'Falha ao criar transcrição'
+  if (/INVALID_CREATE_RESPONSE/i.test(msg)) return 'Resposta inválida ao criar transcrição'
+  if (/POLL_FAILED/i.test(msg)) return 'Falha ao consultar transcrição'
+  if (/TIMEOUT/i.test(msg)) return 'Tempo esgotado ao transcrever'
+  if (/TRANSCRIPTION_FAILED/i.test(msg)) return 'Transcrição falhou'
+  return 'Ocorreu um erro ao transcrever'
+}
 export default function App() {
   const messages = useChatStore((state) => state.messages)
   const addMessage = useChatStore((state) => state.addMessage)
@@ -260,7 +290,9 @@ export default function App() {
   const [attachMode, setAttachMode] = useState<'image' | 'text'>('image')
   const [attachText, setAttachText] = useState('')
   const [attachFile, setAttachFile] = useState<File | null>(null)
-  const [attachments, setAttachments] = useState<Array<{ kind: 'image' | 'text'; content: string; name?: string; mime?: string }>>([])
+  const [attachments, setAttachments] = useState<
+    Array<{ kind: 'image' | 'text'; content: string; name?: string; mime?: string }>
+  >([])
   const [attachTextName, setAttachTextName] = useState<string | null>(null)
   const [attachTextMime, setAttachTextMime] = useState<string | null>(null)
 
@@ -269,10 +301,12 @@ export default function App() {
     if (!file) return
     const MAX_MB = 1
     if (file.size > MAX_MB * 1024 * 1024) {
-      showToast(`Arquivo muito grande (> ${MAX_MB}MB)`) 
+      showToast(`Arquivo muito grande (> ${MAX_MB}MB)`)
       return
     }
-    const isTextLike = file.type.startsWith('text/') || /\.(txt|md|csv|json|log|ya?ml|xml|html?|js|ts)$/i.test(file.name)
+    const isTextLike =
+      file.type.startsWith('text/') ||
+      /\.(txt|md|csv|json|log|ya?ml|xml|html?|js|ts)$/i.test(file.name)
     if (!isTextLike) {
       showToast('Apenas arquivos de texto são suportados')
       return
@@ -319,7 +353,7 @@ export default function App() {
       }
       const MAX_MB = 4
       if (attachFile.size > MAX_MB * 1024 * 1024) {
-        showToast(`Arquivo muito grande (> ${MAX_MB}MB)`) 
+        showToast(`Arquivo muito grande (> ${MAX_MB}MB)`)
         return
       }
       if (!attachFile.type.startsWith('image/')) {
@@ -419,7 +453,9 @@ export default function App() {
     } catch (e: any) {
       const isAbort =
         e?.name === 'AbortError' ||
-        String(e?.message || '').toLowerCase().includes('abort')
+        String(e?.message || '')
+          .toLowerCase()
+          .includes('abort')
       if (!isAbort) {
         console.error(e)
         removeLastAssistantMessage()
@@ -433,7 +469,12 @@ export default function App() {
       }
     } finally {
       const totalMs = performance.now() - start
-      setMetrics((prev) => ({ firstTokenMs: prev?.firstTokenMs ?? firstTokenMs, totalMs, chunks, chars }))
+      setMetrics((prev) => ({
+        firstTokenMs: prev?.firstTokenMs ?? firstTokenMs,
+        totalMs,
+        chunks,
+        chars,
+      }))
       logUX({ firstTokenMs, totalMs, chunks, chars })
       setStreaming(false)
       setAbortController(null)
@@ -483,16 +524,16 @@ export default function App() {
           e?.message === 'INVALID_URL'
             ? 'URL inválida'
             : e?.message === 'CREATE_FAILED'
-            ? 'Falha ao criar transcrição'
-            : e?.message === 'INVALID_CREATE_RESPONSE'
-            ? 'Resposta inválida ao criar transcrição'
-            : e?.message === 'POLL_FAILED'
-            ? 'Falha ao consultar transcrição'
-            : e?.message === 'TIMEOUT'
-            ? 'Tempo esgotado ao transcrever'
-            : e?.message === 'TRANSCRIPTION_FAILED'
-            ? 'Transcrição falhou'
-            : 'Ocorreu um erro ao transcrever'
+              ? 'Falha ao criar transcrição'
+              : e?.message === 'INVALID_CREATE_RESPONSE'
+                ? 'Resposta inválida ao criar transcrição'
+                : e?.message === 'POLL_FAILED'
+                  ? 'Falha ao consultar transcrição'
+                  : e?.message === 'TIMEOUT'
+                    ? 'Tempo esgotado ao transcrever'
+                    : e?.message === 'TRANSCRIPTION_FAILED'
+                      ? 'Transcrição falhou'
+                      : 'Ocorreu um erro ao transcrever'
         setError(msg)
         showToast(msg)
       }
@@ -506,7 +547,11 @@ export default function App() {
     setError(null)
     const nowIso = new Date().toISOString()
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1)
-    addMessage({ role: 'user', content: `Transcrever arquivo: ${file.name} (${sizeMb} MB)`, timestamp: nowIso })
+    addMessage({
+      role: 'user',
+      content: `Transcrever arquivo: ${file.name} (${sizeMb} MB)`,
+      timestamp: nowIso,
+    })
     addMessage({ role: 'assistant', content: 'Iniciando transcrição...', timestamp: nowIso })
     setStreaming(true)
 
@@ -531,7 +576,9 @@ export default function App() {
     } catch (e: any) {
       const isAbort =
         e?.name === 'AbortError' ||
-        String(e?.message || '').toLowerCase().includes('abort')
+        String(e?.message || '')
+          .toLowerCase()
+          .includes('abort')
       if (isAbort) {
         removeLastAssistantMessage()
         setError(null)
@@ -539,20 +586,7 @@ export default function App() {
       } else {
         console.error(e)
         removeLastAssistantMessage()
-        const msg =
-          e?.message === 'INVALID_FILE'
-            ? 'Arquivo inválido'
-            : e?.message === 'CREATE_FAILED'
-            ? 'Falha ao criar transcrição'
-            : e?.message === 'INVALID_CREATE_RESPONSE'
-            ? 'Resposta inválida ao criar transcrição'
-            : e?.message === 'POLL_FAILED'
-            ? 'Falha ao consultar transcrição'
-            : e?.message === 'TIMEOUT'
-            ? 'Tempo esgotado ao transcrever'
-            : e?.message === 'TRANSCRIPTION_FAILED'
-            ? 'Transcrição falhou'
-            : 'Ocorreu um erro ao transcrever'
+        const msg = mapUploadErrorMessage(e)
         setError(msg)
         showToast(msg)
       }
@@ -627,9 +661,11 @@ export default function App() {
 
   // Microinterações do CTA usam useHoverControls (GSAP) e respeitam prefers-reduced-motion
 
+  const density = useChatStore((s) => s.density)
+
   return (
-    <div className="bg-root min-h-screen text-primary grid place-items-center p-4">
-      <div className="w-full max-w-3xl h-[min(90vh,720px)] bg-surface-1 rounded-2xl border border-border overflow-hidden shadow-[0_6px_20px_rgba(0,0,0,.25)] grid grid-rows-[auto_auto_1fr]">
+    <div className="bg-root text-primary grid min-h-screen place-items-center p-4">
+      <div className="bg-surface-1 border-border grid h-[min(90vh,720px)] w-full max-w-3xl grid-rows-[auto_auto_1fr] overflow-hidden rounded-2xl border shadow-[0_6px_20px_rgba(0,0,0,.25)]">
         <Header
           mode={mode}
           tone={tone}
@@ -650,15 +686,20 @@ export default function App() {
         />
 
         <main role="main" className="grid h-full grid-rows-[1fr_auto]">
-          <div className={`flex-1 overflow-y-auto px-4 sm:px-6 py-4 bg-surface-2/70 bg-cover bg-center bg-no-repeat bg-blend-multiply ${
-            (useChatStore((s) => s.density) === 'compact' && 'space-y-2') ||
-            (useChatStore((s) => s.density) === 'spacious' && 'space-y-4') ||
-            'space-y-3'
-          }`} style={{ backgroundImage: 'url(/Wallpaper.png)' }}>
+          <div
+            className={`bg-surface-2/70 flex-1 overflow-y-auto bg-cover bg-center bg-no-repeat px-4 py-4 bg-blend-multiply sm:px-6 ${
+              density === 'compact'
+                ? 'space-y-2'
+                : density === 'spacious'
+                  ? 'space-y-4'
+                  : 'space-y-3'
+            }`}
+            style={{ backgroundImage: 'url(/Wallpaper.png)' }}
+          >
             {messages.length === 0 && (
               <div className="pt-1">
                 <SuggestionsChips
-                  suggestions={["Quem é você?"]}
+                  suggestions={['Quem é você?']}
                   onSuggest={(p) => {
                     if (!streaming) {
                       sendMessage(p)
@@ -690,16 +731,15 @@ export default function App() {
             <div ref={endRef} />
           </div>
 
-          <form
-            className="border-t border-border bg-surface-1 p-3"
-            onSubmit={onSubmit}
-          >
-            <div className="relative flex items-end gap-2 rounded-xl border border-border bg-surface-2 focus-within:ring-2 ring-gold p-2">
-              <label htmlFor="composer-input" className="sr-only">Mensagem</label>
+          <form className="border-border bg-surface-1 border-t p-3" onSubmit={onSubmit}>
+            <div className="border-border bg-surface-2 ring-gold relative flex items-end gap-2 rounded-xl border p-2 focus-within:ring-2">
+              <label htmlFor="composer-input" className="sr-only">
+                Mensagem
+              </label>
               <textarea
                 ref={inputRef}
                 id="composer-input"
-                className="flex-1 resize-none bg-transparent outline-none border-0 text-sm text-primary placeholder-muted max-h-36 p-2"
+                className="text-primary placeholder-muted max-h-36 flex-1 resize-none border-0 bg-transparent p-2 text-sm outline-none"
                 placeholder={buildPlaceholder()}
                 title={buildContextHint()}
                 aria-describedby={
@@ -718,7 +758,9 @@ export default function App() {
               />
 
               <div className="flex items-center gap-2 pb-1">
-                <span className="text-secondary text-xs hidden sm:inline">Não insira PII/segredos.</span>
+                <span className="text-secondary hidden text-xs sm:inline">
+                  Não insira PII/segredos.
+                </span>
                 <button
                   type="button"
                   onClick={() => setAttachOpen(true)}
@@ -730,7 +772,7 @@ export default function App() {
                 </button>
                 {attachments.length > 0 && (
                   <span className="text-secondary text-[11px]" aria-live="polite">
-                    {attachments.length} anexo{attachments.length>1?'s':''}
+                    {attachments.length} anexo{attachments.length > 1 ? 's' : ''}
                   </span>
                 )}
 
@@ -744,7 +786,10 @@ export default function App() {
                 >
                   {streaming ? (
                     <span className="inline-flex items-center gap-2">
-                      <span aria-hidden className="inline-block h-3 w-3 rounded-full border-2 border-black/40 border-t-black animate-spin motion-reduce:animate-none"></span>
+                      <span
+                        aria-hidden
+                        className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-black/40 border-t-black motion-reduce:animate-none"
+                      ></span>
                       <span>Gerando...</span>
                     </span>
                   ) : (
@@ -766,7 +811,10 @@ export default function App() {
                 >
                   {streaming ? (
                     <span className="inline-flex items-center gap-2">
-                      <span aria-hidden className="inline-block h-3 w-3 rounded-full border-2 border-black/40 border-t-black animate-spin motion-reduce:animate-none"></span>
+                      <span
+                        aria-hidden
+                        className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-black/40 border-t-black motion-reduce:animate-none"
+                      ></span>
                       <span>Gerando...</span>
                     </span>
                   ) : (
@@ -777,7 +825,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={cancelStreaming}
-                    className="border-danger bg-danger hover:bg-danger/90 ring-gold rounded-md border px-3 py-2 text-white focus:outline-none focus-visible:ring-2 will-change-transform"
+                    className="border-danger bg-danger hover:bg-danger/90 ring-gold rounded-md border px-3 py-2 text-white will-change-transform focus:outline-none focus-visible:ring-2"
                     {...bind}
                   >
                     Parar
@@ -790,15 +838,18 @@ export default function App() {
               <div className="mt-2">
                 <ul className="flex flex-wrap gap-2">
                   {attachments.map((a, i) => (
-                    <li key={i} className="border-border bg-surface-2 rounded-md border px-2 py-1 text-[11px] inline-flex items-center gap-2">
-                      <span className="sr-only">Anexo {i+1}:</span>
+                    <li
+                      key={i}
+                      className="border-border bg-surface-2 inline-flex items-center gap-2 rounded-md border px-2 py-1 text-[11px]"
+                    >
+                      <span className="sr-only">Anexo {i + 1}:</span>
                       <span aria-hidden>{a.kind === 'image' ? '🖼️' : '📝'}</span>
                       <span>{a.name || (a.kind === 'image' ? 'imagem' : 'texto')}</span>
                       <button
                         type="button"
                         onClick={() => removeAttachment(i)}
                         className="hover:text-primary ring-gold rounded-sm underline underline-offset-2 focus:outline-none focus-visible:ring-2"
-                        aria-label={`Remover anexo ${i+1}`}
+                        aria-label={`Remover anexo ${i + 1}`}
                       >
                         Remover
                       </button>
@@ -849,7 +900,7 @@ export default function App() {
             type="button"
             className={`rounded-full border px-3 py-1 text-xs transition-colors focus:outline-none focus-visible:ring-2 ${
               transcribeMode === 'url'
-                ? 'border-gold bg-gold text-black ring-gold'
+                ? 'border-gold bg-gold ring-gold text-black'
                 : 'border-border bg-surface-3 hover:bg-surface-2 ring-gold text-primary'
             }`}
             onClick={() => setTranscribeMode('url')}
@@ -860,7 +911,7 @@ export default function App() {
             type="button"
             className={`rounded-full border px-3 py-1 text-xs transition-colors focus:outline-none focus-visible:ring-2 ${
               transcribeMode === 'file'
-                ? 'border-gold bg-gold text-black ring-gold'
+                ? 'border-gold bg-gold ring-gold text-black'
                 : 'border-border bg-surface-3 hover:bg-surface-2 ring-gold text-primary'
             }`}
             onClick={() => setTranscribeMode('file')}
@@ -870,7 +921,9 @@ export default function App() {
         </div>
         {transcribeMode === 'url' ? (
           <div key="transcribe-url-mode">
-            <label className="mb-2 block text-xs" htmlFor="transcribe-url">URL do áudio</label>
+            <label className="mb-2 block text-xs" htmlFor="transcribe-url">
+              URL do áudio
+            </label>
             <input
               key="transcribe-url-input"
               id="transcribe-url"
@@ -885,7 +938,9 @@ export default function App() {
           </div>
         ) : (
           <div key="transcribe-file-mode">
-            <label className="mb-2 block text-xs" htmlFor="transcribe-file">Arquivo de áudio/vídeo</label>
+            <label className="mb-2 block text-xs" htmlFor="transcribe-file">
+              Arquivo de áudio/vídeo
+            </label>
             <input
               key="transcribe-file-input"
               id="transcribe-file"
@@ -897,7 +952,7 @@ export default function App() {
             />
           </div>
         )}
-        </ConfirmDialog>
+      </ConfirmDialog>
 
       {/* Dialogo de Anexos: adicionar texto/imagem */}
       <ConfirmDialog
@@ -918,7 +973,7 @@ export default function App() {
             type="button"
             className={`rounded-full border px-3 py-1 text-xs transition-colors focus:outline-none focus-visible:ring-2 ${
               attachMode === 'image'
-                ? 'border-gold bg-gold text-black ring-gold'
+                ? 'border-gold bg-gold ring-gold text-black'
                 : 'border-border bg-surface-3 hover:bg-surface-2 ring-gold text-primary'
             }`}
             onClick={() => setAttachMode('image')}
@@ -929,7 +984,7 @@ export default function App() {
             type="button"
             className={`rounded-full border px-3 py-1 text-xs transition-colors focus:outline-none focus-visible:ring-2 ${
               attachMode === 'text'
-                ? 'border-gold bg-gold text-black ring-gold'
+                ? 'border-gold bg-gold ring-gold text-black'
                 : 'border-border bg-surface-3 hover:bg-surface-2 ring-gold text-primary'
             }`}
             onClick={() => setAttachMode('text')}
@@ -939,15 +994,19 @@ export default function App() {
         </div>
         {attachMode === 'text' ? (
           <div key="attach-text-mode">
-            <label className="mb-2 block text-xs" htmlFor="attach-text">Texto do anexo</label>
+            <label className="mb-2 block text-xs" htmlFor="attach-text">
+              Texto do anexo
+            </label>
             <textarea
               id="attach-text"
               value={attachText}
               onChange={(e) => setAttachText(e.target.value)}
-              className="border-border bg-surface-3 focus:bg-surface-2 ring-gold mb-2 w-full min-h-24 rounded-md border px-3 py-2 text-sm focus:outline-none focus-visible:ring-2"
+              className="border-border bg-surface-3 focus:bg-surface-2 ring-gold mb-2 min-h-24 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus-visible:ring-2"
               placeholder="Cole aqui o texto contextual..."
             />
-            <label className="mb-2 mt-2 block text-xs" htmlFor="attach-text-file">Ou selecione um arquivo de texto (até 1MB)</label>
+            <label className="mb-2 mt-2 block text-xs" htmlFor="attach-text-file">
+              Ou selecione um arquivo de texto (até 1MB)
+            </label>
             <input
               id="attach-text-file"
               type="file"
@@ -956,12 +1015,16 @@ export default function App() {
               className="border-border bg-surface-3 focus:bg-surface-2 ring-gold mb-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus-visible:ring-2"
             />
             {attachTextName && (
-              <p className="text-secondary text-xs" aria-live="polite">Arquivo selecionado: {attachTextName}</p>
+              <p className="text-secondary text-xs" aria-live="polite">
+                Arquivo selecionado: {attachTextName}
+              </p>
             )}
           </div>
         ) : (
           <div key="attach-image-mode">
-            <label className="mb-2 block text-xs" htmlFor="attach-file">Imagem (até 4MB)</label>
+            <label className="mb-2 block text-xs" htmlFor="attach-file">
+              Imagem (até 4MB)
+            </label>
             <input
               id="attach-file"
               type="file"
@@ -969,7 +1032,9 @@ export default function App() {
               onChange={(e) => setAttachFile(e.target.files?.[0] || null)}
               className="border-border bg-surface-3 focus:bg-surface-2 ring-gold mb-4 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus-visible:ring-2"
             />
-            <p className="text-secondary text-xs">Formatos comuns suportados (PNG, JPEG, WEBP). O conteúdo será enviado em data URL.</p>
+            <p className="text-secondary text-xs">
+              Formatos comuns suportados (PNG, JPEG, WEBP). O conteúdo será enviado em data URL.
+            </p>
           </div>
         )}
       </ConfirmDialog>

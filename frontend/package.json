@@ -19,6 +19,7 @@
     "perf:lh:attach": "mkdir -p .lighthouse && lighthouse http://localhost:${PORT:-5176} --preset=desktop --output=json --output=html --output-path=.lighthouse/report"
   },
   "dependencies": {
+    "@vercel/blob": "^1.1.1",
     "dompurify": "^3.0.9",
     "gsap": "^3.13.0",
     "lucide-react": "^0.541.0",
