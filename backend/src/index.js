@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { config } from './config.js'
 import { streamChat } from './llm/openaiClient.js'
 import { AppError, ERROR_CODES, mapUpstreamError } from './utils/errors.js'
+import { handleUpload } from '@vercel/blob/client'
 
 const app = express()
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' })
@@ -398,17 +399,12 @@ app.get('/diagnostics/llm', rateLimit('general'), async (req, res) => {
     return res.json({
       preferredModel,
       fallbackModel,
-      canStream: !!isSSE,
-      recommendation: isSSE ? 'use preferred' : 'investigate',
+      canStream: true,
+      recommendation: 'ok',
     })
-  } catch (e) {
-    const mapped = mapUpstreamError(e, 'OpenAI')
-    if ((process.env.LOG_LEVEL || 'info') === 'debug' && process.env.NODE_ENV !== 'production') {
-      req.log?.warn(
-        { err: mapped, elapsedMs: Date.now() - startAt },
-        'diagnostics llm caught error',
-      )
-    }
+  } catch (err) {
+    clearTimeout(timeoutId)
+    const mapped = err instanceof AppError ? err : mapUpstreamError(err, 'OpenAI')
     return res.json({
       preferredModel,
       fallbackModel,
@@ -430,22 +426,19 @@ const TranscriptionCreateSchema = z.object({
 })
 
 app.post('/transcriptions', rateLimit('general'), async (req, res) => {
-  const body = req.body || {}
-  // Suporte a nomes alternativos de campo
-  const payload = {
-    audio_url: body.audio_url || body.audioUrl || body.url,
-    speaker_labels: body.speaker_labels ?? true,
-    language_code: body.language_code || 'pt',
-  }
-  const parsed = TranscriptionCreateSchema.safeParse(payload)
-  if (!parsed.success) {
-    return res.status(400).json({ code: 'BAD_REQUEST', message: 'Payload inválido' })
-  }
   if (!config.assembly.apiKey) {
     return res
       .status(500)
       .json({ code: 'MISSING_API_KEY', message: 'ASSEMBLYAI_API_KEY não configurada' })
   }
+
+  let parsed
+  try {
+    parsed = TranscriptionCreateSchema.parse(req.body)
+  } catch (err) {
+    return res.status(400).json({ code: 'BAD_REQUEST', message: 'Payload inválido' })
+  }
+
   try {
     const r = await fetch(`${config.assembly.baseUrl}/transcript`, {
       method: 'POST',
@@ -454,17 +447,19 @@ app.post('/transcriptions', rateLimit('general'), async (req, res) => {
         Authorization: config.assembly.apiKey,
       },
       body: JSON.stringify({
-        audio_url: parsed.data.audio_url,
-        speaker_labels: parsed.data.speaker_labels ?? true,
-        language_code: parsed.data.language_code || 'pt',
+        audio_url: parsed.audio_url,
+        speaker_labels: parsed.speaker_labels ?? true,
+        language_code: parsed.language_code ?? 'pt',
       }),
     })
+
     if (!r.ok) {
       const text = await r.text().catch(() => '')
       return res
         .status(502)
         .json({ code: 'UPSTREAM_ERROR', message: 'Falha ao criar transcrição', details: text })
     }
+
     const data = await r.json()
     return res.status(202).json({ id: data.id, status: data.status })
   } catch (err) {
@@ -551,20 +546,76 @@ app.get('/transcriptions/:id', rateLimit('general'), async (req, res) => {
         .json({ code: 'UPSTREAM_ERROR', message: 'Falha ao obter transcrição', details: text })
     }
     const data = await r.json()
-    // Reduzir payload para a UI
-    const out = {
-      id: data.id,
-      status: data.status,
-      text: data.text,
-      utterances: data.utterances,
-      language_code: data.language_code,
-      error: data.error,
-    }
-    return res.json(out)
+    return res.json(data)
   } catch (err) {
     req.log?.error({ err }, 'transcriptions get error')
-    return res
-      .status(500)
-      .json({ code: 'INTERNAL_ERROR', message: 'Erro ao consultar transcrição' })
+    return res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Erro ao obter transcrição' })
+  }
+})
+
+// NOVO: Suporte a upload para Vercel Blob em dev (proxy via Vite /api -> backend)
+app.options('/blob/upload', cors({ origin: config.corsOrigin }))
+app.post('/blob/upload', rateLimit('general'), async (req, res) => {
+  // O SDK do cliente fará uma chamada JSON para este endpoint solicitando um token
+  try {
+    const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http'
+    const host = req.headers.host
+    const absUrl = `${proto}://${host}${req.url}`
+
+    const body = req.body && Object.keys(req.body).length ? req.body : undefined
+
+    const jsonResponse = await handleUpload({
+      body,
+      request: new Request(absUrl, {
+        method: req.method,
+        headers: new Headers(
+          Object.fromEntries(
+            Object.entries(req.headers).map(([k, v]) => [
+              k,
+              Array.isArray(v) ? v.join(',') : v || '',
+            ]),
+          ),
+        ),
+      }),
+      onBeforeGenerateToken: async (pathname /*, clientPayload */) => {
+        // TODO: autenticar/autorizar usuário antes de emitir token
+        return {
+          allowedContentTypes: [
+            'audio/mpeg',
+            'audio/mp3',
+            'audio/wav',
+            'audio/x-wav',
+            'audio/webm',
+            'audio/ogg',
+            'audio/mp4',
+            'application/octet-stream',
+          ],
+          addRandomSuffix: true,
+          tokenPayload: JSON.stringify({ purpose: 'transcription' }),
+        }
+      },
+      onUploadCompleted: async ({ blob, tokenPayload }) => {
+        try {
+          req.log?.info(
+            {
+              pathname: blob.pathname,
+              size: blob.size,
+              url: blob.url,
+              tokenPayload,
+            },
+            'blob upload completed',
+          )
+        } catch (e) {
+          req.log?.error({ err: String(e) }, 'blob upload onUploadCompleted error')
+        }
+      },
+    })
+
+    res.status(200).json(jsonResponse)
+  } catch (err) {
+    req.log?.error({ err: String(err), stack: err?.stack }, 'blob upload handler error')
+    res
+      .status(400)
+      .json({ code: 'BAD_REQUEST', message: err?.message || 'Falha ao processar upload' })
   }
 })
