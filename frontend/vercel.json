@@ -6,11 +6,11 @@
     "api/transcriptions/upload.js": {
       "maxDuration": 60
     },
+    "api/analyze/*.js": {
+      "maxDuration": 60
+    },
     "api/**/*.js": {
       "maxDuration": 30
-    },
-    "api/analyze/index.js": {
-      "maxDuration": 60
     }
   },
   "headers": [
